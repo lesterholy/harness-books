@@ -61,6 +61,18 @@ Keep final exports per book under `exported/` with stable names:
 If a new output is added, put it in `book.json` under `outputs`.
 Do not encode the primary release version only in the output filename. The canonical source of version truth should remain `book.json`.
 
+## PDF Link Colors
+
+All hyperlink colors in the PDF are set to **Maroon** for a uniform appearance. This is configured via Pandoc `-V` variables in `export_book_pdf.py`:
+
+- `linkcolor=Maroon` (internal cross-references)
+- `urlcolor=Maroon` (external URLs)
+- `citecolor=Maroon` (citations)
+- `filecolor=Maroon` (file links)
+- `toccolor=Maroon` (TOC entries)
+
+When adding new link-related Pandoc variables, keep the Maroon convention. Do not leave individual color variables at their Pandoc defaults (Blue, Green, Cyan) as this produces a distracting multi-color link style.
+
 ## Build Policy
 
 Current PDF export is intentionally:

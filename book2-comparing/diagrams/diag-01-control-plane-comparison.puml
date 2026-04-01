@@ -1,0 +1,103 @@
+@startuml
+title Claude Code vs Codex: 控制面对比
+
+skinparam backgroundColor #F7F1E6
+skinparam dpi 135
+skinparam linetype ortho
+skinparam packageStyle rectangle
+skinparam shadowing false
+skinparam defaultFontName Georgia
+skinparam defaultFontSize 15
+skinparam TitleFontSize 20
+skinparam PackageFontSize 16
+skinparam RectangleFontSize 15
+skinparam NoteFontSize 14
+skinparam ArrowFontSize 13
+skinparam ArrowColor #5E5A53
+skinparam PackageBorderColor #1D1D1D
+skinparam PackageFontColor #161616
+skinparam RectangleBorderColor #1D1D1D
+skinparam RectangleBackgroundColor #F2E9D9
+skinparam RectangleFontColor #161616
+skinparam NoteBackgroundColor #F5EBDD
+skinparam NoteBorderColor #8C2721
+skinparam NoteFontColor #7B1E1E
+skinparam TitleFontColor #161616
+skinparam RectangleRoundCorner 10
+
+left to right direction
+
+package "共同输入" #F3ECDD {
+  actor User as user
+  rectangle "Repo / Team Rules" as shared_rules
+  rectangle "Local Context" as local_context
+}
+
+package "Claude Code\n动态拼装控制面" #E8DDD0 {
+  rectangle "Default System Prompt" as cc_default
+  rectangle "Append / Agent Prompt" as cc_append
+  rectangle "CLAUDE.md" as cc_claude
+  rectangle "Memory\nPersistent + Session" as cc_memory
+  rectangle "Skills / Hooks" as cc_skills
+  rectangle "Prompt Assembly" as cc_assembly
+  rectangle "Query Loop" as cc_loop
+
+  cc_default --> cc_assembly
+  cc_append --> cc_assembly
+  cc_claude --> cc_assembly
+  cc_memory --> cc_assembly
+  cc_skills --> cc_assembly
+  cc_assembly --> cc_loop
+}
+
+package "Codex\n结构化控制面" #EFE6D8 {
+  rectangle "AGENTS.md Fragment" as cx_agents
+  rectangle "Skill Fragment" as cx_skill
+  rectangle "Tool Schema" as cx_tools
+  rectangle "Approval Policy" as cx_approval
+  rectangle "Thread Options" as cx_thread
+  rectangle "Structured Instruction Layer" as cx_instr
+  rectangle "Thread / Turn Runtime" as cx_runtime
+
+  cx_agents --> cx_instr
+  cx_skill --> cx_instr
+  cx_tools --> cx_runtime
+  cx_approval --> cx_runtime
+  cx_thread --> cx_runtime
+  cx_instr --> cx_runtime
+}
+
+user --> cc_loop : 目标 / 中断 / 反馈
+user --> cx_runtime : input / turn
+shared_rules --> cc_claude
+shared_rules --> cx_agents
+local_context --> cc_memory
+local_context --> cx_thread
+
+cc_loop -[hidden]down-> cx_runtime
+
+note bottom of cc_assembly
+先拼装成运行时 prompt
+再进入主循环
+end note
+
+note bottom of cx_instr
+先格式化为 fragment / schema
+再进入线程执行
+end note
+
+note right of cc_loop
+核心气质:
+- 现场动态装配
+- loop 驱动
+- 规则跟随会话进入
+end note
+
+note right of cx_runtime
+核心气质:
+- 结构化注入
+- 显式参数与片段
+- turn / thread 驱动
+end note
+
+@enduml

@@ -1,0 +1,252 @@
+from __future__ import annotations
+
+import argparse
+import subprocess
+import sys
+import shutil
+from pathlib import Path
+
+from book_meta import load_meta, resolve_book_dir
+from build_pandoc_book import build_book
+
+
+def run(args: list[str], *, cwd: Path | None = None) -> None:
+    subprocess.run(args, cwd=cwd, check=True)
+
+
+def parse_args(argv: list[str]) -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Export a book PDF.")
+    parser.add_argument("book_dir", nargs="?", help="Book directory path")
+    parser.add_argument(
+        "--clean",
+        action="store_true",
+        help="Remove build caches and previous exported files before rebuilding.",
+    )
+    parser.add_argument(
+        "--clean-generated",
+        action="store_true",
+        help="Also regenerate PNG diagrams from .puml sources before exporting.",
+    )
+    return parser.parse_args(argv)
+
+
+def remove_path(path: Path) -> None:
+    if not path.exists():
+        return
+    if path.is_dir():
+        shutil.rmtree(path)
+    else:
+        path.unlink()
+
+
+def clean_book_outputs(book_dir: Path, meta: dict) -> None:
+    for rel_path in meta.get("outputs", {}).values():
+        remove_path(book_dir / rel_path)
+
+    for rel_dir in ("_book", "_debug", "_texdebug"):
+        remove_path(book_dir / rel_dir)
+
+
+def regenerate_diagrams(book_dir: Path) -> None:
+    diagram_dir = book_dir / "diagrams"
+    puml_files = sorted(diagram_dir.glob("*.puml"))
+    if not puml_files:
+        return
+
+    for puml_path in puml_files:
+        png_path = puml_path.with_suffix(".png")
+        remove_path(png_path)
+
+    try:
+        run(["plantuml", "-tpng", *[str(path.name) for path in puml_files]], cwd=diagram_dir)
+    except FileNotFoundError as exc:
+        raise SystemExit("Missing required command for --clean-generated: plantuml") from exc
+
+
+def render_title_page(meta: dict, cover_pdf_rel: str | None) -> str:
+    pages: list[str] = []
+
+    if cover_pdf_rel:
+        pages.append(
+            "\n".join(
+                [
+                    r"\begin{titlepage}",
+                    r"\thispagestyle{empty}",
+                    r"\newgeometry{margin=0mm}",
+                    rf"\noindent\includegraphics[width=\paperwidth,height=\paperheight]{{{cover_pdf_rel}}}",
+                    r"\restoregeometry",
+                    r"\end{titlepage}",
+                    r"\clearpage",
+                ]
+            )
+        )
+
+    title_page_lines = meta.get("title_page_lines", [])
+    if title_page_lines:
+        body = [r"\begin{titlepage}", r"\thispagestyle{empty}", r"\newgeometry{top=0mm,bottom=0mm,left=0mm,right=0mm}"]
+        first = True
+        for line in title_page_lines:
+            if first:
+                body.append(r"\vspace*{0.62\textheight}")
+                body.append(r"\begin{center}")
+                body.append(rf"{{\fontsize{{18pt}}{{30pt}}\selectfont\itshape {line}\par}}")
+                first = False
+            else:
+                body.append(r"\vspace{8mm}")
+                body.append(rf"{{\fontsize{{16pt}}{{24pt}}\selectfont\color[HTML]{{7B1E1E}} {line}\par}}")
+        body.extend(
+            [
+                r"\end{center}",
+                r"\vspace*{\fill}",
+                r"\restoregeometry",
+                r"\end{titlepage}",
+                r"\clearpage",
+            ]
+        )
+        pages.append("\n".join(body))
+
+    return "\n\n".join(pages) + ("\n" if pages else "")
+
+
+def render_header() -> str:
+    return "\n".join(
+        [
+            r"\usepackage{graphicx}",
+            r"\usepackage{etoolbox}",
+            r"\setkeys{Gin}{width=\linewidth,height=0.82\textheight,keepaspectratio}",
+            r"% Keep paragraph spacing local instead of loading parskip.",
+            r"% Pandoc's parskip path patches \@starttoc and caused TOC entries",
+            r"% to disappear around page breaks in ctexbook-based PDFs.",
+            r"\setlength{\parindent}{0pt}",
+            r"\setlength{\parskip}{6pt plus 2pt minus 1pt}",
+            r"% Tune TOC entry spacing and font without external packages.",
+            r"\makeatletter",
+            r"% Widen the reserved page-number box on the right side of TOC entries.",
+            r"% This reduces collisions between long titles, dot leaders and page numbers.",
+            r"\renewcommand{\@pnumwidth}{2.8em}",
+            r"\renewcommand{\@tocrmarg}{3.8em}",
+            r"\renewcommand*\l@chapter[2]{%",
+            r"  \ifnum \c@tocdepth >\m@ne",
+            r"    \addpenalty{-\@highpenalty}%",
+            r"    \addvspace{8pt}%",
+            r"    \begingroup",
+            r"      \parindent \z@ \rightskip \@pnumwidth",
+            r"      \parfillskip -\@pnumwidth",
+            r"      \leavevmode \normalsize\bfseries #1\nobreak\hfill \nobreak\hb@xt@\@pnumwidth{\hss #2}\par",
+            r"      \penalty\@highpenalty",
+            r"    \endgroup",
+            r"  \fi}",
+            r"\renewcommand*\l@section[2]{%",
+            r"  \ifnum \c@tocdepth >\z@",
+            r"    \addpenalty\@secpenalty",
+            r"    \addvspace{1pt}%",
+            r"    \@dottedtocline{1}{1.5em}{3.2em}{\normalsize #1}{\normalsize #2}%",
+            r"  \fi}",
+            r"% Isolate TOC from global \parskip (6pt) which inflates entry spacing",
+            r"% and causes page-break miscalculation in ctexbook.",
+            r"% IMPORTANT: Do NOT add \setstretch{1.0} here — the combination of",
+            r"% setspace's \setstretch{1.0} with \parskip=0pt triggers a bug where",
+            r"% TOC entries near the first page break silently disappear.",
+            r"\pretocmd{\tableofcontents}{\clearpage\begingroup\raggedbottom\setlength{\parskip}{0pt}\pagestyle{plain}}{}{}",
+            r"\apptocmd{\tableofcontents}{\clearpage\endgroup}{}{}",
+            r"\makeatother",
+            "",
+        ]
+    )
+
+
+def ensure_cover_pdf(book_dir: Path, meta: dict, book_output_dir: Path) -> str | None:
+    cover_image = meta.get("cover_image")
+    if not cover_image:
+        return None
+
+    cover_path = book_dir / cover_image
+    if cover_path.suffix.lower() == ".pdf":
+        return cover_path.relative_to(book_dir).as_posix()
+
+    if cover_path.suffix.lower() != ".svg":
+        raise SystemExit(f"Unsupported cover format: {cover_path}")
+
+    output_cover = book_output_dir / "cover.pdf"
+    run(["rsvg-convert", "-f", "pdf", "-o", str(output_cover), str(cover_path)])
+    return output_cover.relative_to(book_dir).as_posix()
+
+
+def main() -> None:
+    args = parse_args(sys.argv[1:])
+    book_dir = resolve_book_dir(args.book_dir)
+    meta = load_meta(book_dir)
+
+    if args.clean or args.clean_generated:
+        clean_book_outputs(book_dir, meta)
+    if args.clean_generated:
+        regenerate_diagrams(book_dir)
+
+    book_output_dir = book_dir / "_book"
+    output_name = meta["outputs"].get("pdf") or meta["outputs"]["book_pdf"]
+    output = book_dir / output_name
+    output.parent.mkdir(parents=True, exist_ok=True)
+    book_md = book_output_dir / "book.md"
+    titlepage_tex = book_output_dir / "titlepage.tex"
+    header_tex = book_output_dir / "header.tex"
+
+    book_output_dir.mkdir(parents=True, exist_ok=True)
+    book_md.write_text(build_book(book_dir, meta), encoding="utf-8")
+
+    cover_pdf_rel = ensure_cover_pdf(book_dir, meta, book_output_dir)
+    titlepage_tex.write_text(render_title_page(meta, cover_pdf_rel), encoding="utf-8")
+    header_tex.write_text(render_header(), encoding="utf-8")
+
+    run(
+        [
+            "pandoc",
+            str(book_md),
+            "--from",
+            "markdown+raw_tex",
+            "--resource-path",
+            str(book_dir),
+            "--toc",
+            "--toc-depth=2",
+            "--pdf-engine=xelatex",
+            f"--include-before-body={titlepage_tex}",
+            f"--include-in-header={header_tex}",
+            "-V",
+            "documentclass=ctexbook",
+            "-V",
+            "classoption=oneside",
+            "-V",
+            "papersize=a4",
+            "-V",
+            "fontsize=12pt",
+            "-V",
+            "indent=true",
+            "-V",
+            "geometry:inner=28mm",
+            "-V",
+            "geometry:outer=22mm",
+            "-V",
+            "geometry:top=24mm",
+            "-V",
+            "geometry:bottom=26mm",
+            "-V",
+            "linestretch=1.32",
+            "-V",
+            "colorlinks=true",
+            "-V",
+            'mainfont=Songti SC',
+            "-V",
+            'CJKmainfont=Songti SC',
+            "-V",
+            "monofont=Menlo",
+            "--highlight-style=tango",
+            "-o",
+            str(output),
+        ],
+        cwd=book_dir,
+    )
+
+    print(output)
+
+
+if __name__ == "__main__":
+    main()

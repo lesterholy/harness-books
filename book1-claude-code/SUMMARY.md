@@ -1,0 +1,16 @@
+# Summary
+
+- [封面与导读](index.md)
+- [前言：为什么今天需要 Harness Engineering](preface.md)
+- [第 1 章 为什么 Harness Engineering 不是 Prompt Engineering 的大号别名](chapter-01-why-harness-engineering.md)
+- [第 2 章 Prompt 不是输入框，而是控制面](chapter-02-prompt-is-control-plane.md)
+- [第 3 章 Query Loop：Agent 不是在答题，而是在持续接管工作流](chapter-03-query-loop-heartbeat.md)
+- [第 4 章 工具、权限与中断：怎样让模型动手，但不让它乱动手](chapter-04-tools-permissions-interrupts.md)
+- [第 5 章 上下文、记忆与压缩：怎样让系统长期工作而不是越聊越糊](chapter-05-context-memory-compact.md)
+- [第 6 章 错误与恢复：模型犯错不是异常，而是运行时常态](chapter-06-errors-and-recovery.md)
+- [第 7 章 多 Agent 与验证：不要让系统自己给自己当裁判](chapter-07-multi-agent-and-verification.md)
+- [第 8 章 团队落地：把个人技巧变成组织能力](chapter-08-team-landing-practices.md)
+- [第 9 章 十条原则：如何判断一个 AI 编程系统是不是工程系统](chapter-09-ten-principles.md)
+- [附录 A 检查清单](appendix-a-checklists.md)
+- [附录 B 图稿说明](appendix-b-diagram-notes.md)
+- [附录 C 源码地图](appendix-c-source-map.md)

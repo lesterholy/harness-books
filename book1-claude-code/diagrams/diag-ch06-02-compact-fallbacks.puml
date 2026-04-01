@@ -1,0 +1,63 @@
+@startuml
+title Chapter 6 · Compact Fallbacks
+
+skinparam backgroundColor #FEFEFE
+skinparam linetype ortho
+skinparam packageStyle rectangle
+skinparam shadowing false
+skinparam dpi 135
+skinparam ranksep 32
+skinparam nodesep 24
+skinparam defaultFontName Georgia
+skinparam defaultFontSize 15
+skinparam TitleFontSize 20
+skinparam NoteFontSize 14
+skinparam ArrowFontSize 13
+skinparam TitleFontColor #161616
+skinparam activity {
+  BackgroundColor #F2E9D9
+  BorderColor #1D1D1D
+  FontColor #161616
+  ArrowColor #5E5A53
+  StartColor #8C2721
+  EndColor #161616
+  DiamondBackgroundColor #F5EBDD
+  DiamondBorderColor #8C2721
+}
+skinparam note {
+  BackgroundColor #F5EBDD
+  BorderColor #8C2721
+  FontColor #7B1E1E
+}
+
+start
+:Start compact request;
+
+if (session-memory path enough?) then (yes)
+  :Apply compact result;
+  stop
+else (no)
+  :Build conversation summary request;
+endif
+
+if (compact request hits PTL?) then (yes)
+  :Trim oldest history groups;
+  :Retry compact request;
+endif
+
+if (repeated failures trip circuit breaker?) then (yes)
+  :Stop auto-compact attempts;
+  :Return control to caller;
+else (no)
+  :Restore critical files / skills / deltas;
+  :Resume next turn with compact boundary;
+endif
+stop
+
+note right
+  Even compact can fail.
+  Claude Code keeps a final escape hatch
+  instead of looping forever.
+end note
+
+@enduml

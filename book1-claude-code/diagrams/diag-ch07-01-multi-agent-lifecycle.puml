@@ -1,0 +1,69 @@
+@startuml
+title Chapter 7 · Multi-Agent Runtime Lifecycle
+
+skinparam backgroundColor #FEFEFE
+skinparam linetype ortho
+skinparam packageStyle rectangle
+skinparam shadowing false
+skinparam dpi 135
+skinparam ranksep 44
+skinparam nodesep 28
+skinparam defaultFontName Georgia
+skinparam defaultFontSize 15
+skinparam TitleFontSize 20
+skinparam NoteFontSize 14
+skinparam ArrowFontSize 13
+skinparam TitleFontColor #161616
+skinparam activity {
+  BackgroundColor #F2E9D9
+  BorderColor #1D1D1D
+  FontColor #161616
+  ArrowColor #5E5A53
+  StartColor #8C2721
+  EndColor #161616
+  DiamondBackgroundColor #F5EBDD
+  DiamondBorderColor #8C2721
+}
+skinparam note {
+  BackgroundColor #F5EBDD
+  BorderColor #8C2721
+  FontColor #7B1E1E
+}
+
+start
+
+:Parent agent decides to delegate;
+:Resolve agent type and execution mode;
+
+if (local / worktree / remote?) then (local or worktree)
+  :Build isolated child context;
+  note right
+    cloned file state
+    child abort controller
+    isolated mutable sets
+    shared cache-safe params
+  end note
+  :Run child query loop;
+  :Track progress and collect output;
+else (remote)
+  :Launch remote task and return handle;
+endif
+
+if (child completed normally?) then (yes)
+  :Coordinator synthesizes result;
+  :Send implementation or verification next;
+else (no)
+  :Propagate failure / cancellation;
+endif
+
+:Run cleanup and unregister tracking;
+:Return result to parent agent;
+note right
+  The coordinator remains
+  responsible for synthesis.
+  Research can be delegated;
+  understanding cannot.
+end note
+stop
+
+@enduml

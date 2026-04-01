@@ -1,0 +1,58 @@
+@startuml
+title Tool Batch Ordering
+
+skinparam backgroundColor #F7F1E6
+skinparam linetype ortho
+skinparam packageStyle rectangle
+skinparam shadowing false
+skinparam dpi 135
+skinparam defaultFontName Georgia
+skinparam defaultFontSize 15
+skinparam TitleFontSize 20
+skinparam NoteFontSize 14
+skinparam ArrowFontSize 13
+skinparam ArrowColor #5E5A53
+skinparam PackageBorderColor #1D1D1D
+skinparam PackageFontColor #161616
+skinparam RectangleBorderColor #1D1D1D
+skinparam RectangleBackgroundColor #F2E9D9
+skinparam RectangleFontColor #161616
+skinparam NoteBackgroundColor #F5EBDD
+skinparam NoteBorderColor #8C2721
+skinparam NoteFontColor #7B1E1E
+skinparam TitleFontColor #161616
+skinparam RectangleRoundCorner 10
+
+left to right direction
+
+rectangle "tool_use blocks" as blocks #E8DDD0
+rectangle "partitionToolCalls()" as partition #E8DDD0
+
+package "Concurrent-safe batch" #EFE6D8 {
+  rectangle "Run concurrently" as run_concurrent
+  rectangle "Queue context modifiers" as queue_modifiers
+  rectangle "Replay modifiers\nin original order" as replay_modifiers
+
+  run_concurrent --> queue_modifiers
+  queue_modifiers --> replay_modifiers
+}
+
+package "Serial batch" #EFE6D8 {
+  rectangle "Run one by one" as run_serial
+  rectangle "Modify context immediately" as immediate_modify
+
+  run_serial --> immediate_modify
+}
+
+blocks --> partition
+partition --> run_concurrent
+partition --> run_serial
+replay_modifiers -[#8C2721]-> immediate_modify : same semantic effect
+
+note bottom of replay_modifiers
+并发只提升吞吐，
+上下文因果顺序
+仍按原 block 回放。
+end note
+
+@enduml

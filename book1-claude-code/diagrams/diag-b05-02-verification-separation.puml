@@ -1,0 +1,68 @@
+@startuml
+title Verification Separation
+
+skinparam backgroundColor #F7F1E6
+skinparam linetype ortho
+skinparam packageStyle rectangle
+skinparam shadowing false
+skinparam dpi 135
+skinparam defaultFontName Georgia
+skinparam defaultFontSize 15
+skinparam TitleFontSize 20
+skinparam NoteFontSize 14
+skinparam ArrowFontSize 13
+skinparam ArrowColor #5E5A53
+skinparam PackageBorderColor #1D1D1D
+skinparam PackageFontColor #161616
+skinparam RectangleBorderColor #1D1D1D
+skinparam RectangleBackgroundColor #F2E9D9
+skinparam RectangleFontColor #161616
+skinparam NoteBackgroundColor #F5EBDD
+skinparam NoteBorderColor #8C2721
+skinparam NoteFontColor #7B1E1E
+skinparam TitleFontColor #161616
+skinparam RectangleRoundCorner 10
+
+top to bottom direction
+
+rectangle "Coordinator" as coord #E8DDD0
+rectangle "Implementation Worker" as impl #EFE6D8
+rectangle "Verification Worker" as verify #EFE6D8
+rectangle "Runtime / Hooks /\nTask System" as runtime #EFE6D8
+
+coord --> impl
+impl --> runtime
+runtime --> coord
+coord --> verify
+verify --> runtime
+runtime --> coord
+
+impl -[hidden]down- runtime
+coord -[hidden]down- verify
+
+note right of impl
+implementation task
+end note
+
+note left of runtime
+code changes + self-check
+end note
+
+note left of verify
+independent verification
+end note
+
+note right of runtime
+proof / failure / edge cases
+verification result
+end note
+
+note bottom of verify
+verification 必须与 implementation
+分离。否则系统会把
+“我改完了”
+误当成
+“它已经正确了”。
+end note
+
+@enduml

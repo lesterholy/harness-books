@@ -1,0 +1,79 @@
+@startuml
+title Chapter 3 · Query Loop Core
+
+skinparam backgroundColor #FEFEFE
+skinparam linetype ortho
+skinparam packageStyle rectangle
+skinparam shadowing false
+skinparam dpi 135
+skinparam ranksep 45
+skinparam nodesep 28
+skinparam defaultFontName Georgia
+skinparam defaultFontSize 15
+skinparam TitleFontSize 20
+skinparam NoteFontSize 14
+skinparam ArrowFontSize 13
+skinparam TitleFontColor #161616
+skinparam activity {
+  BackgroundColor #F2E9D9
+  BorderColor #1D1D1D
+  FontColor #161616
+  ArrowColor #5E5A53
+  StartColor #8C2721
+  EndColor #161616
+  DiamondBackgroundColor #F5EBDD
+  DiamondBorderColor #8C2721
+}
+skinparam note {
+  BackgroundColor #F5EBDD
+  BorderColor #8C2721
+  FontColor #7B1E1E
+}
+
+start
+
+:Assemble loop state;
+note right
+  messages
+  toolUseContext
+  compact counters
+  transition reason
+end note
+
+while (turn still active?) is (yes)
+  :Prepare iteration;
+  :Run pre-call governance;
+  note right
+    budget
+    hooks
+    history snip
+    microcompact
+    collapse / autocompact gates
+  end note
+
+  :Call model and stream events;
+  note right
+    text deltas
+    tool_use blocks
+    usage updates
+    stop reasons
+  end note
+
+  if (tool_use emitted?) then (yes)
+    :Plan tool work;
+    :Execute tools;
+    :Merge tool_result and\ncontext modifiers;
+  else (no)
+  endif
+
+  if (recoverable issue?) then (recover)
+    :Apply compact / retry branch;
+  else (stable)
+    :Append assistant/user/system effects;
+  endif
+endwhile (no)
+
+:Finalize turn and return;
+stop
+
+@enduml

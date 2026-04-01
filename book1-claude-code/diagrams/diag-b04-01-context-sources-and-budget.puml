@@ -1,0 +1,61 @@
+@startuml
+title Context Sources And Budget
+
+skinparam backgroundColor #F7F1E6
+skinparam linetype ortho
+skinparam packageStyle rectangle
+skinparam shadowing false
+skinparam dpi 135
+skinparam defaultFontName Georgia
+skinparam defaultFontSize 15
+skinparam TitleFontSize 20
+skinparam NoteFontSize 14
+skinparam ArrowFontSize 13
+skinparam ArrowColor #5E5A53
+skinparam PackageBorderColor #1D1D1D
+skinparam PackageFontColor #161616
+skinparam RectangleBorderColor #1D1D1D
+skinparam RectangleBackgroundColor #F2E9D9
+skinparam RectangleFontColor #161616
+skinparam NoteBackgroundColor #F5EBDD
+skinparam NoteBorderColor #8C2721
+skinparam NoteFontColor #7B1E1E
+skinparam TitleFontColor #161616
+skinparam RectangleRoundCorner 10
+
+left to right direction
+
+package "Context sources" #E8DDD0 {
+  rectangle "CLAUDE.md /\nRules" as rules
+  rectangle "Persistent Memory" as persistent
+  rectangle "Session Memory" as session
+  rectangle "Conversation Messages" as messages
+
+  rules --> messages
+  persistent --> messages
+  session --> messages
+}
+
+package "Budget axis" #F3E6CD {
+  rectangle "Effective Context Window" as w1
+  rectangle "Warning Buffer" as w2
+  rectangle "Error Buffer" as w3
+  rectangle "Autocompact Threshold" as w4
+  rectangle "Manual Compact Buffer" as w5
+
+  w1 --> w2
+  w2 --> w3
+  w3 --> w4
+  w4 --> w5
+}
+
+messages -[#8C2721]-> w1 : consumed against
+
+note bottom of messages
+治理重点不在“消息条数”，
+而在不同来源的规则、
+记忆和对话如何一起
+占用上下文预算。
+end note
+
+@enduml

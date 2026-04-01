@@ -1,0 +1,70 @@
+@startuml
+title StreamingToolExecutor Lifecycle
+
+skinparam backgroundColor #F7F1E6
+skinparam linetype ortho
+skinparam packageStyle rectangle
+skinparam shadowing false
+skinparam dpi 135
+skinparam ranksep 34
+skinparam nodesep 24
+skinparam defaultFontName Georgia
+skinparam defaultFontSize 15
+skinparam TitleFontSize 20
+skinparam NoteFontSize 14
+skinparam ArrowFontSize 13
+skinparam TitleFontColor #161616
+skinparam activity {
+  BackgroundColor #F2E9D9
+  BorderColor #1D1D1D
+  FontColor #161616
+  ArrowColor #5E5A53
+  StartColor #8C2721
+  EndColor #161616
+  DiamondBackgroundColor #F5EBDD
+  DiamondBorderColor #8C2721
+}
+skinparam note {
+  BackgroundColor #F5EBDD
+  BorderColor #8C2721
+  FontColor #7B1E1E
+}
+
+start
+:Queued;
+:Check canExecuteTool?;
+if (eligible?) then (yes)
+  :Permission check;
+  if (approved?) then (yes)
+    :Executing;
+    if (progress?) then (progress)
+      :Emit progress update;
+    endif
+    if (completed?) then (done)
+      :Completed result ready;
+      :Yield in safe order;
+    else (aborted)
+      :Synthetic error / discard;
+    endif
+  else (no)
+    :Synthetic error;
+  endif
+else (wait)
+  :Wait for promise or progress;
+endif
+:Yielded;
+stop
+
+note right
+这里处理的是流式工具状态：
+- queued
+- executing
+- completed
+- yielded
+
+并把中断、拒绝、
+sibling failure 收成
+受控结束语义。
+end note
+
+@enduml

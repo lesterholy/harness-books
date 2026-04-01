@@ -1,0 +1,86 @@
+@startuml
+title Claude Code vs Codex: 工具治理与执行边界
+
+skinparam backgroundColor #F7F1E6
+skinparam dpi 135
+skinparam linetype ortho
+skinparam packageStyle rectangle
+skinparam shadowing false
+skinparam defaultFontName Georgia
+skinparam defaultFontSize 15
+skinparam TitleFontSize 20
+skinparam PackageFontSize 16
+skinparam RectangleFontSize 15
+skinparam NoteFontSize 14
+skinparam ArrowFontSize 13
+skinparam ArrowColor #5E5A53
+skinparam PackageBorderColor #1D1D1D
+skinparam PackageFontColor #161616
+skinparam RectangleBorderColor #1D1D1D
+skinparam RectangleBackgroundColor #F2E9D9
+skinparam RectangleFontColor #161616
+skinparam NoteBackgroundColor #F5EBDD
+skinparam NoteBorderColor #8C2721
+skinparam NoteFontColor #7B1E1E
+skinparam TitleFontColor #161616
+skinparam RectangleRoundCorner 10
+
+left to right direction
+
+package "Claude Code\n运行时调度治理" #E8DDD0 {
+  rectangle "tool_use blocks" as cc_blocks
+  rectangle "partitionToolCalls()" as cc_partition
+  rectangle "Concurrency-safe batch" as cc_concurrent
+  rectangle "Serial batch" as cc_serial
+  rectangle "StreamingToolExecutor" as cc_stream
+  rectangle "ask / allow / deny" as cc_permission
+  rectangle "Bash Special Rules" as cc_bash
+
+  cc_blocks --> cc_partition
+  cc_partition --> cc_concurrent
+  cc_partition --> cc_serial
+  cc_concurrent --> cc_stream
+  cc_serial --> cc_stream
+  cc_permission --> cc_stream
+  cc_bash --> cc_permission
+}
+
+package "Codex\nSchema + Policy 治理" #EFE6D8 {
+  rectangle "ToolSpec / JsonSchema" as cx_schema
+  rectangle "exec_command / shell /\nrequest_permissions" as cx_local_tools
+  rectangle "Approval Parameters" as cx_approval
+  rectangle "ExecPolicy\nPolicy / Rule / Evaluation" as cx_policy
+  rectangle "Sandbox / Network /\nworkdir / thread options" as cx_exec_env
+  rectangle "Tool Runtime" as cx_runtime
+
+  cx_schema --> cx_local_tools
+  cx_local_tools --> cx_runtime
+  cx_approval --> cx_runtime
+  cx_policy --> cx_runtime
+  cx_exec_env --> cx_runtime
+}
+
+cc_stream -[hidden]down-> cx_runtime
+
+rectangle "External World" as world #F3E6CD
+
+cc_stream --> world : 受运行时编排后执行
+cx_runtime --> world : 受 schema + policy 后执行
+
+note bottom of cc_stream
+重点:
+- 并发安全判定
+- 上下文回放顺序
+- 中断收尾
+- 高风险工具治理
+end note
+
+note bottom of cx_policy
+重点:
+- 权限显式入参
+- request_permissions 工具
+- policy language
+- 执行边界配置化
+end note
+
+@enduml

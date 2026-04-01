@@ -1,0 +1,60 @@
+@startuml
+title Query Loop 主循环
+
+skinparam backgroundColor #F7F1E6
+skinparam linetype ortho
+skinparam packageStyle rectangle
+skinparam shadowing false
+skinparam dpi 135
+skinparam ranksep 40
+skinparam nodesep 26
+skinparam defaultFontName Georgia
+skinparam defaultFontSize 15
+skinparam TitleFontSize 20
+skinparam NoteFontSize 14
+skinparam ArrowFontSize 13
+skinparam TitleFontColor #161616
+skinparam ArrowColor #5E5A53
+skinparam RectangleBorderColor #1D1D1D
+skinparam RectangleBackgroundColor #F2E9D9
+skinparam RectangleFontColor #161616
+skinparam RectangleRoundCorner 10
+skinparam note {
+  BackgroundColor #F5EBDD
+  BorderColor #8C2721
+  FontColor #7B1E1E
+}
+
+left to right direction
+
+rectangle "Turn Start" as start_turn #E8DDD0
+rectangle "Prepare turn context\nprefetch / boundary / budget /\nsnip / microcompact" as prepare #F2E9D9
+rectangle "Blocking check" as blocking #F5EBDD
+rectangle "Model streaming" as model #EFE6D8
+rectangle "Tool execution\nStreamingToolExecutor" as tools #EFE6D8
+rectangle "Append turn effects" as effects #F2E9D9
+rectangle "Stop hooks" as stop_hooks #F2E9D9
+rectangle "Terminal" as terminal #E8DDD0
+rectangle "Surface error" as error_box #F5EBDD
+
+start_turn --> prepare
+prepare --> blocking
+blocking --> error_box : limit hit
+blocking --> model : ok
+model --> tools : tool_use
+model --> effects : no tool_use
+tools --> effects : tool results merged
+effects --> start_turn : follow-up / next turn
+effects --> stop_hooks : stable completion
+stop_hooks --> terminal
+error_box --> terminal
+
+note right
+主循环负责：
+- 输入治理
+- 模型调用
+- 工具回填
+- 下一轮重入
+end note
+
+@enduml

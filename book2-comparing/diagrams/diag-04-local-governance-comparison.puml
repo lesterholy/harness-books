@@ -1,0 +1,85 @@
+@startuml
+title Claude Code vs Codex: 本地治理、技能与多代理
+
+skinparam backgroundColor #F7F1E6
+skinparam dpi 135
+skinparam linetype ortho
+skinparam packageStyle rectangle
+skinparam shadowing false
+skinparam defaultFontName Georgia
+skinparam defaultFontSize 15
+skinparam TitleFontSize 20
+skinparam PackageFontSize 16
+skinparam RectangleFontSize 15
+skinparam NoteFontSize 14
+skinparam ArrowFontSize 13
+skinparam ArrowColor #5E5A53
+skinparam PackageBorderColor #1D1D1D
+skinparam PackageFontColor #161616
+skinparam RectangleBorderColor #1D1D1D
+skinparam RectangleBackgroundColor #F2E9D9
+skinparam RectangleFontColor #161616
+skinparam NoteBackgroundColor #F5EBDD
+skinparam NoteBorderColor #8C2721
+skinparam NoteFontColor #7B1E1E
+skinparam TitleFontColor #161616
+skinparam RectangleRoundCorner 10
+
+left to right direction
+
+package "Claude Code\n现场记忆式治理" #E8DDD0 {
+  rectangle "CLAUDE.md" as cc_claude
+  rectangle "SkillTool" as cc_skill
+  rectangle "forkedAgent" as cc_fork
+  rectangle "coordinator /\nverification" as cc_verify
+  rectangle "hooksConfigManager" as cc_hooks
+  rectangle "Session / Task Runtime" as cc_runtime
+
+  cc_claude --> cc_runtime
+  cc_skill --> cc_fork
+  cc_fork --> cc_runtime
+  cc_hooks --> cc_runtime
+  cc_verify --> cc_runtime
+}
+
+package "Codex\n制度挂载式治理" #EFE6D8 {
+  rectangle "AGENTS.md" as cx_agents
+  rectangle "System Skills\ninstalled to CODEX_HOME" as cx_skills
+  rectangle "Skills Fingerprint /\n.system marker" as cx_fingerprint
+  rectangle "Hook Events\nsession/pre/post/stop" as cx_hooks
+  rectangle "ThreadManager /\nAgentControl" as cx_agentsys
+  rectangle "Thread / Session Runtime" as cx_runtime
+
+  cx_agents --> cx_runtime
+  cx_skills --> cx_runtime
+  cx_fingerprint --> cx_skills
+  cx_hooks --> cx_runtime
+  cx_agentsys --> cx_runtime
+}
+
+cc_runtime -[hidden]down-> cx_runtime
+
+rectangle "Team Governance" as team #F3ECDD
+
+team --> cc_claude
+team --> cc_skill
+team --> cx_agents
+team --> cx_skills
+
+note bottom of cc_runtime
+治理方式:
+- 规则进入当前会话
+- skill 常与子代理协作
+- verify 作为独立纪律
+- hook 紧贴任务现场
+end note
+
+note bottom of cx_runtime
+治理方式:
+- rules / skills 更像资产
+- hook 是显式生命周期事件
+- 代理协作通过工具与线程承接
+- 本地制度更易版本化
+end note
+
+@enduml

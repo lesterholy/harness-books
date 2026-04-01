@@ -1,0 +1,73 @@
+@startuml
+title Chapter 4 · Tool Execution Lifecycle
+
+skinparam backgroundColor #FEFEFE
+skinparam linetype ortho
+skinparam packageStyle rectangle
+skinparam shadowing false
+skinparam dpi 135
+skinparam ranksep 44
+skinparam nodesep 26
+skinparam defaultFontName Georgia
+skinparam defaultFontSize 15
+skinparam TitleFontSize 20
+skinparam NoteFontSize 14
+skinparam ArrowFontSize 13
+skinparam TitleFontColor #161616
+skinparam activity {
+  BackgroundColor #F2E9D9
+  BorderColor #1D1D1D
+  FontColor #161616
+  ArrowColor #5E5A53
+  StartColor #8C2721
+  EndColor #161616
+  DiamondBackgroundColor #F5EBDD
+  DiamondBorderColor #8C2721
+}
+skinparam note {
+  BackgroundColor #F5EBDD
+  BorderColor #8C2721
+  FontColor #7B1E1E
+}
+
+start
+
+:Receive assistant tool_use blocks;
+:Partition calls by concurrency safety;
+
+if (streaming path?) then (yes)
+  :Queue tools in StreamingToolExecutor;
+  :Check permission + interrupt rules;
+  :Run tools as they become eligible;
+  :Emit progress or synthetic errors;
+  :Yield finished results in safe order;
+else (no)
+  if (batch is concurrent-safe?) then (yes)
+    :Run tools in parallel;
+    :Buffer context modifiers;
+    :Apply modifiers in original order;
+  else (serial)
+    :Run tools one by one;
+    :Apply each modifier immediately;
+  endif
+endif
+
+:Merge tool_result into transcript;
+note right
+  Execution may be parallel.
+  Context evolution is still replayed
+  in assistant block order.
+end note
+
+:Return deterministic context back to query loop;
+note right
+  Harness controls live around the tool call:
+  permission gates,
+  interrupt behavior,
+  sibling cancellation,
+  and synthetic results.
+end note
+
+stop
+
+@enduml

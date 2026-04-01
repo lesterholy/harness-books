@@ -1,0 +1,76 @@
+@startuml
+title Query Loop 恢复分支
+
+skinparam backgroundColor #F7F1E6
+skinparam linetype ortho
+skinparam packageStyle rectangle
+skinparam shadowing false
+skinparam dpi 135
+skinparam ranksep 34
+skinparam nodesep 24
+skinparam defaultFontName Georgia
+skinparam defaultFontSize 15
+skinparam TitleFontSize 20
+skinparam NoteFontSize 14
+skinparam ArrowFontSize 13
+skinparam TitleFontColor #161616
+skinparam activity {
+  BackgroundColor #F2E9D9
+  BorderColor #1D1D1D
+  FontColor #161616
+  ArrowColor #5E5A53
+  StartColor #8C2721
+  EndColor #161616
+  DiamondBackgroundColor #F5EBDD
+  DiamondBorderColor #8C2721
+}
+skinparam note {
+  BackgroundColor #F5EBDD
+  BorderColor #8C2721
+  FontColor #7B1E1E
+}
+
+start
+
+:Recovery trigger observed;
+
+if (prompt too long?) then (PTL)
+  :Try collapse drain first;
+  if (works?) then (yes)
+    :Re-enter Turn Start;
+  else (no)
+    :Attempt reactive compact once;
+    if (works?) then (yes)
+      :Build post-compact messages;
+      :Re-enter Turn Start;
+    else (no)
+      :Surface PTL error;
+      stop
+    endif
+  endif
+elseif (max_output_tokens?) then (truncate)
+  :Raise output cap if cheap;
+  if (cap raised?) then (yes)
+    :Resume model call;
+  else (no)
+    :Inject resume meta message;
+    :Re-enter Turn Start;
+  endif
+elseif (user interrupted?) then (interrupt)
+  :Yield remaining tool results;
+  :Emit interruption message;
+  stop
+else (other)
+  :Classify API / tool / hook failure;
+  :Surface or retry by policy;
+endif
+
+stop
+
+note right
+恢复不是外挂流程，
+而是主循环内部的
+受控旁路。
+end note
+
+@enduml

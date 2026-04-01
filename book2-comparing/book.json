@@ -1,0 +1,13 @@
+{
+  "title": "Claude Code 和 Codex 的 Harness 设计哲学",
+  "description": "一部比较 Claude Code 与 Codex harness 设计哲学的工程长文。",
+  "author": "OpenAI Codex",
+  "language": "zh-hans",
+  "root": ".",
+  "styles": {
+    "website": "styles/website.css",
+    "pdf": "styles/pdf.css"
+  },
+  "plugins": [],
+  "pluginsConfig": {}
+}

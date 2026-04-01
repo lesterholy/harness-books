@@ -1,0 +1,53 @@
+@startuml
+title Chapter 4 · Permission Decision Layers
+
+skinparam backgroundColor #FEFEFE
+skinparam linetype ortho
+skinparam packageStyle rectangle
+skinparam shadowing false
+skinparam dpi 135
+skinparam ranksep 38
+skinparam nodesep 26
+skinparam defaultFontName Georgia
+skinparam defaultFontSize 15
+skinparam TitleFontSize 20
+skinparam NoteFontSize 14
+skinparam ArrowFontSize 13
+skinparam TitleFontColor #161616
+skinparam rectangle {
+  BackgroundColor #F2E9D9
+  BorderColor #1D1D1D
+  FontColor #161616
+  RoundCorner 10
+}
+skinparam note {
+  BackgroundColor #F5EBDD
+  BorderColor #8C2721
+  FontColor #7B1E1E
+}
+skinparam ArrowColor #5E5A53
+
+rectangle "Tool request" as Request #EFE6D8
+rectangle "Rules layer\nallow / deny / ask" as Rules #E8DDD0
+rectangle "Mode layer\nbypass / plan /\nauto / default" as Modes #E8DDD0
+rectangle "Automated checks\nclassifier / hooks /\npolicy gates" as Checks #EFE6D8
+rectangle "Interactive approval\nonly when runtime\nshould not decide" as Dialog #F3E6CD
+rectangle "Final result\nALLOW or DENY" as Result #EFE6D8
+
+Request --> Rules
+Rules --> Modes
+Modes --> Checks
+Checks --> Dialog
+Dialog --> Result
+Rules --> Result : hard deny
+Modes --> Result : bypass allow
+Checks --> Result : clear auto decision
+
+note right of Rules
+  Claude Code keeps an
+  explicit ask path.
+  Intent is not the same as
+  authorization.
+end note
+
+@enduml

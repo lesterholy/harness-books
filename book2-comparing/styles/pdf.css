@@ -1,0 +1,19 @@
+body {
+  font-family: "Noto Serif SC", "Songti SC", "STSong", serif;
+  color: #161616;
+}
+
+h1, h2, h3 {
+  page-break-after: avoid;
+}
+
+img {
+  max-width: 100%;
+  page-break-inside: avoid;
+}
+
+blockquote {
+  color: #5a5a5a;
+  border-left: 4px solid #7b1e1e;
+  padding-left: 12px;
+}

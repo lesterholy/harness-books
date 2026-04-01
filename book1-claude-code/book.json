@@ -1,0 +1,13 @@
+{
+  "title": "Harness Engineering：Claude Code 设计指南",
+  "description": "一部从 Claude Code 源码抽象 AI 编程系统工程原则的中文书稿。",
+  "author": "OpenAI Codex",
+  "language": "zh-hans",
+  "root": ".",
+  "styles": {
+    "website": "styles/website.css",
+    "pdf": "styles/pdf.css"
+  },
+  "plugins": [],
+  "pluginsConfig": {}
+}

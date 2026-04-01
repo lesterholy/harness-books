@@ -1,0 +1,82 @@
+@startuml
+title 团队治理图
+
+skinparam backgroundColor #F7F1E6
+skinparam linetype ortho
+skinparam packageStyle rectangle
+skinparam shadowing false
+skinparam dpi 135
+skinparam defaultFontName Georgia
+skinparam defaultFontSize 15
+skinparam TitleFontSize 20
+skinparam NoteFontSize 14
+skinparam ArrowFontSize 13
+skinparam ArrowColor #5E5A53
+skinparam PackageBorderColor #1D1D1D
+skinparam PackageFontColor #161616
+skinparam RectangleBorderColor #1D1D1D
+skinparam RectangleBackgroundColor #F2E9D9
+skinparam RectangleFontColor #161616
+skinparam NoteBackgroundColor #F5EBDD
+skinparam NoteBorderColor #8C2721
+skinparam NoteFontColor #7B1E1E
+skinparam TitleFontColor #161616
+skinparam RectangleRoundCorner 10
+
+left to right direction
+
+actor Developers as dev
+
+package "团队制度" #E8DDD0 {
+  rectangle "Team CLAUDE.md" as team_claude
+  rectangle "Skills" as team_skills
+  rectangle "Permissions /\nApproval" as approval
+  rectangle "Hooks" as hooks
+  rectangle "Verification\nDefinition" as verify_def
+}
+
+package "AI Agent Runtime" #EFE6D8 {
+  rectangle "Prompt Assembly" as prompt_assembly
+  rectangle "Query Loop" as runtime_loop
+  rectangle "Tool Execution" as tool_exec
+  rectangle "Recovery /\nCompact /\nSubagents" as recovery
+}
+
+package "Observability" #EFE6D8 {
+  rectangle "Transcript" as transcript
+  rectangle "Task Output" as output
+  rectangle "Analytics" as analytics
+  rectangle "Audit / Replay" as audit
+}
+
+dev --> runtime_loop : 使用 / 协作
+team_claude --> prompt_assembly : 稳定规则
+team_skills --> runtime_loop : 可复用流程切片
+approval --> tool_exec : 自动 / 询问 / 拒绝
+hooks --> runtime_loop : 生命周期治理
+verify_def --> runtime_loop : done 的定义
+
+prompt_assembly --> runtime_loop
+runtime_loop --> tool_exec
+runtime_loop --> recovery
+
+runtime_loop --> transcript
+tool_exec --> output
+recovery --> analytics
+transcript --> audit
+output --> audit
+analytics --> audit
+
+note bottom of team_skills
+Skill 不是 prompt 收藏夹，
+而是团队把个人经验
+硬化成制度切片的方式。
+end note
+
+note right of audit
+真正的团队落地
+不只部署能力，
+还部署解释能力。
+end note
+
+@enduml

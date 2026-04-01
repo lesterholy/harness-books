@@ -1,0 +1,52 @@
+@startuml
+title Coordinator And Worker Flow
+
+skinparam backgroundColor #F7F1E6
+skinparam linetype ortho
+skinparam shadowing false
+skinparam dpi 135
+skinparam defaultFontName Georgia
+skinparam defaultFontSize 15
+skinparam TitleFontSize 20
+skinparam NoteFontSize 14
+skinparam ArrowFontSize 13
+skinparam ArrowColor #5E5A53
+skinparam TitleFontColor #161616
+skinparam sequence {
+  ArrowColor #5E5A53
+  LifeLineBorderColor #1D1D1D
+  LifeLineBackgroundColor #F2E9D9
+  ParticipantBorderColor #1D1D1D
+  ParticipantBackgroundColor #EFE6D8
+  ParticipantFontColor #161616
+}
+skinparam note {
+  BackgroundColor #F5EBDD
+  BorderColor #8C2721
+  FontColor #7B1E1E
+}
+
+actor User as user
+participant Coordinator as coord
+participant "Research Worker" as research
+participant "Implementation Worker" as impl
+participant "Runtime / Hooks /\nTask System" as runtime
+
+user -> coord : 提出目标
+coord -> runtime : Spawn research workers
+runtime -> research : isolated context
+research --> runtime : findings
+runtime --> coord : research result
+coord -> coord : synthesize findings
+coord -> runtime : Spawn implementation worker
+runtime -> impl : isolated subagent
+impl --> runtime : code changes + self-check
+runtime --> coord : implementation result
+coord --> user : 综合结论 / 风险 / 下一步
+
+note right of coord
+Coordinator 负责综合与分发，
+不只是转发 worker 产出。
+end note
+
+@enduml

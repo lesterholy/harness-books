@@ -1,0 +1,105 @@
+@startuml
+title Claude Code 总体控制面
+
+skinparam backgroundColor #F7F1E6
+skinparam linetype ortho
+skinparam packageStyle rectangle
+skinparam shadowing false
+skinparam dpi 135
+skinparam defaultFontName Georgia
+skinparam defaultFontSize 15
+skinparam TitleFontSize 20
+skinparam NoteFontSize 14
+skinparam ArrowFontSize 13
+skinparam ArrowColor #5E5A53
+skinparam PackageBorderColor #1D1D1D
+skinparam PackageFontColor #161616
+skinparam RectangleBorderColor #1D1D1D
+skinparam RectangleBackgroundColor #F2E9D9
+skinparam RectangleFontColor #161616
+skinparam NoteBackgroundColor #F5EBDD
+skinparam NoteBorderColor #8C2721
+skinparam NoteFontColor #7B1E1E
+skinparam TitleFontColor #161616
+skinparam RectangleRoundCorner 10
+
+left to right direction
+
+package "用户与组织输入" #F3ECDD {
+  actor User as user
+  rectangle "Team Policy" as team_policy
+  rectangle "Repo Rules" as repo_rules
+}
+
+package "控制面" #E8DDD0 {
+  rectangle "System Prompt Assembly" as system_prompt
+  rectangle "CLAUDE.md / Rules" as claude_md
+  rectangle "Memory\nPersistent + Session" as memory
+  rectangle "Skills" as skills
+  rectangle "Hooks" as hooks
+}
+
+package "执行循环" #EFE6D8 {
+  rectangle "Query Loop" as query_loop
+  rectangle "Input Governance" as input_governance
+  rectangle "Model Streaming" as model_streaming
+  rectangle "Tool Orchestration" as tool_orchestration
+  rectangle "Recovery" as recovery
+  rectangle "Continuation / Stop" as continuation
+}
+
+package "外部能力" #F3E6CD {
+  rectangle "Filesystem" as fs
+  rectangle "Bash / Git" as bash_git
+  rectangle "MCP / Network" as mcp_network
+}
+
+package "持久化与观测" #EFE6D8 {
+  rectangle "Transcript" as transcript
+  rectangle "Task Output" as task_output
+  rectangle "Analytics" as analytics
+  rectangle "Compact Boundary" as compact_boundary
+}
+
+user --> query_loop : 目标 / 反馈 / 中断
+team_policy --> system_prompt : 团队约束
+repo_rules --> claude_md : 仓库级规则
+
+system_prompt --> query_loop
+claude_md --> query_loop
+memory --> query_loop
+skills --> query_loop
+hooks --> query_loop
+
+query_loop --> input_governance
+input_governance --> model_streaming
+model_streaming --> tool_orchestration
+tool_orchestration --> recovery
+recovery --> continuation
+continuation --> query_loop : 下一轮 / 结束
+
+tool_orchestration --> fs
+tool_orchestration --> bash_git
+tool_orchestration --> mcp_network
+
+query_loop --> transcript
+query_loop --> task_output
+query_loop --> analytics
+query_loop --> compact_boundary
+compact_boundary --> query_loop : 压缩后重入
+
+note bottom of query_loop
+模型不是系统中心
+它只是受控执行循环中的
+一个不稳定部件
+end note
+
+note right of recovery
+恢复路径包括:
+- prompt too long
+- max output tokens
+- interrupt
+- tool / hook failure
+end note
+
+@enduml

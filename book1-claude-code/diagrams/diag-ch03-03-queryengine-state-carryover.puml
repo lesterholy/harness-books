@@ -1,0 +1,61 @@
+@startuml
+title Chapter 3 · QueryEngine State Carry-Over
+
+skinparam backgroundColor #FEFEFE
+skinparam linetype ortho
+skinparam packageStyle rectangle
+skinparam shadowing false
+skinparam dpi 135
+skinparam ranksep 30
+skinparam nodesep 22
+skinparam defaultFontName Georgia
+skinparam defaultFontSize 15
+skinparam TitleFontSize 20
+skinparam NoteFontSize 14
+skinparam ArrowFontSize 13
+skinparam TitleFontColor #161616
+skinparam rectangle {
+  BackgroundColor #F2E9D9
+  BorderColor #1D1D1D
+  FontColor #161616
+  RoundCorner 10
+}
+skinparam note {
+  BackgroundColor #F5EBDD
+  BorderColor #8C2721
+  FontColor #7B1E1E
+}
+
+rectangle "Turn N" as T1 #EFE6D8
+rectangle "Turn N+1" as T2 #EFE6D8
+rectangle "Turn N+2" as T3 #EFE6D8
+
+rectangle "State kept across turns" as StateBox #E8DDD0 {
+  rectangle "mutableMessages" as S1
+  rectangle "readFileState cache" as S2
+  rectangle "abortController" as S3
+  rectangle "permission denials" as S4
+  rectangle "usage accounting" as S5
+  rectangle "memory / skill indexes" as S6
+
+  S1 -[hidden]down- S2
+  S2 -[hidden]down- S3
+  S3 -[hidden]down- S4
+  S4 -[hidden]down- S5
+  S5 -[hidden]down- S6
+}
+
+T1 --> T2
+T2 --> T3
+StateBox --> T1
+StateBox --> T2
+StateBox --> T3
+
+note bottom of StateBox
+  Query loop owns one turn.
+  QueryEngine owns the
+  conversation shell
+  that survives between turns.
+end note
+
+@enduml

@@ -1,0 +1,53 @@
+@startuml
+title Compact Rebuild Pipeline
+
+skinparam backgroundColor #F7F1E6
+skinparam linetype ortho
+skinparam packageStyle rectangle
+skinparam shadowing false
+skinparam dpi 135
+skinparam ranksep 30
+skinparam nodesep 26
+skinparam defaultFontName Georgia
+skinparam defaultFontSize 15
+skinparam TitleFontSize 20
+skinparam NoteFontSize 14
+skinparam ArrowFontSize 13
+skinparam TitleFontColor #161616
+skinparam ArrowColor #5E5A53
+skinparam RectangleBorderColor #1D1D1D
+skinparam RectangleBackgroundColor #F2E9D9
+skinparam RectangleFontColor #161616
+skinparam RectangleRoundCorner 10
+skinparam note {
+  BackgroundColor #F5EBDD
+  BorderColor #8C2721
+  FontColor #7B1E1E
+}
+
+top to bottom direction
+
+rectangle "Strip images /\nreinjected attachments" as strip #E8DDD0
+rectangle "Summarize" as summarize #F2E9D9
+rectangle "Compact request PTL?" as ptl #F5EBDD
+rectangle "Retry with\ntruncated head" as retry #F5EBDD
+rectangle "Build compact\nboundary" as boundary #EFE6D8
+rectangle "Reinject files / plan /\nskills / tool deltas / MCP" as reinject #EFE6D8
+rectangle "Post-compact\nworking context" as post #E8DDD0
+
+strip --> summarize
+summarize --> ptl
+ptl --> retry : yes
+ptl --> boundary : no
+retry --> boundary
+boundary --> reinject
+reinject --> post
+
+note right of post
+compact 的目标不是
+做一条 summary，
+而是重建下一轮
+还能继续工作的语义底座。
+end note
+
+@enduml

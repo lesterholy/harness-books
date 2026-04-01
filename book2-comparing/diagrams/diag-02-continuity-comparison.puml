@@ -1,0 +1,92 @@
+@startuml
+title Claude Code vs Codex: 连续性与状态承接
+
+skinparam backgroundColor #F7F1E6
+skinparam dpi 135
+skinparam linetype ortho
+skinparam packageStyle rectangle
+skinparam shadowing false
+skinparam defaultFontName Georgia
+skinparam defaultFontSize 15
+skinparam TitleFontSize 20
+skinparam PackageFontSize 16
+skinparam RectangleFontSize 15
+skinparam NoteFontSize 14
+skinparam ArrowFontSize 13
+skinparam ArrowColor #5E5A53
+skinparam PackageBorderColor #1D1D1D
+skinparam PackageFontColor #161616
+skinparam RectangleBorderColor #1D1D1D
+skinparam RectangleBackgroundColor #F2E9D9
+skinparam RectangleFontColor #161616
+skinparam NoteBackgroundColor #F5EBDD
+skinparam NoteBorderColor #8C2721
+skinparam NoteFontColor #7B1E1E
+skinparam TitleFontColor #161616
+skinparam RectangleRoundCorner 10
+
+left to right direction
+
+package "Claude Code\n连续性住在 Query Loop" #E8DDD0 {
+  rectangle "Messages" as cc_messages
+  rectangle "Tool Use Context" as cc_tool_ctx
+  rectangle "AutoCompact Tracking" as cc_compact
+  rectangle "Recovery Counters" as cc_recovery
+  rectangle "Transition State" as cc_transition
+  rectangle "Query Loop" as cc_loop
+  rectangle "Continuation / Stop" as cc_continue
+
+  cc_messages --> cc_loop
+  cc_tool_ctx --> cc_loop
+  cc_compact --> cc_loop
+  cc_recovery --> cc_loop
+  cc_transition --> cc_loop
+  cc_loop --> cc_continue
+  cc_continue --> cc_loop : next turn
+}
+
+package "Codex\n连续性住在线程与记录层" #EFE6D8 {
+  rectangle "Thread" as cx_thread
+  rectangle "ThreadManager" as cx_manager
+  rectangle "RolloutRecorder" as cx_rollout
+  rectangle "State DB Bridge" as cx_state
+  rectangle "Message History" as cx_history
+  rectangle "Memories Pipeline" as cx_memory
+  rectangle "Turn Runtime" as cx_turn
+
+  cx_manager --> cx_thread
+  cx_thread --> cx_turn
+  cx_turn --> cx_rollout
+  cx_turn --> cx_state
+  cx_turn --> cx_history
+  cx_rollout --> cx_memory
+}
+
+cc_continue -[hidden]down-> cx_thread
+
+rectangle "中断 / 恢复 / 压缩" as shared_interrupt #F3E6CD
+
+shared_interrupt --> cc_loop : reactive compact\nmax output recovery
+shared_interrupt --> cx_turn : thread resume\nstate-backed continuity
+
+note bottom of cc_loop
+主循环直接持有:
+- 当前消息
+- 工具上下文
+- compact 状态
+- 恢复分支
+end note
+
+note right of cx_thread
+显式 thread id
+使连续性不只是
+"循环还在继续"
+而是可索引会话事实
+end note
+
+note right of cx_rollout
+持续写入 rollout / state db
+history / memories pipeline
+end note
+
+@enduml
